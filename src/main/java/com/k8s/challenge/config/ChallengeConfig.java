@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +33,7 @@ public class ChallengeConfig {
     @Bean
     public ConversionService conversionService(List<Converter> converters) {
         GenericConversionService conversionService = new GenericConversionService();
-        converters.stream().forEach(conversionService::addConverter);
+        converters.forEach(conversionService::addConverter);
         return conversionService;
     }
 
@@ -113,7 +111,6 @@ public class ChallengeConfig {
 
         @Bean
         public ApiClient apiClient() throws IOException {
-            setCertificatesAndPath();
             ClientCertificateAuthentication clientCertificateAuthentication;
             LOGGER.info("BasePath is {}, Client Cert Path is {}, Client Key Path is {}", path, clientCrt, clientKey);
             if (StringUtils.isEmpty(clientCrt) || StringUtils.isEmpty(clientKey)) {
@@ -134,18 +131,6 @@ public class ChallengeConfig {
                     apiClient.getHttpClient().newBuilder().readTimeout(Duration.ZERO).build());
             io.kubernetes.client.openapi.Configuration.setDefaultApiClient(apiClient);
             return apiClient;
-        }
-
-        private void setCertificatesAndPath() {
-            if (System.getProperty("K8S_PATH") != null) {
-                path = System.getProperty("K8S_PATH");
-            }
-            if (System.getProperty("K8S_CLIENTCRT") != null) {
-                clientCrt = System.getProperty("K8S_CLIENTCRT");
-            }
-            if (System.getProperty("K8S_CLIENTKEY") != null) {
-                clientKey = System.getProperty("K8S_CLIENTKEY");
-            }
         }
 
         public void setPath(String path) {
@@ -169,15 +154,14 @@ public class ChallengeConfig {
     }
 
     private static byte[] readFileAsByte(String fileName) throws IOException {
-        InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
-        byte[] arr = new byte[1024 * 5];
-        int length = inputStream.read(arr);
-        return Arrays.copyOfRange(arr, 0, length);
+        try(InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName)) {
+            return IOUtils.toByteArray(inputStream);
+        }
     }
 
     private static byte[] readFileAsByte(File file) throws IOException {
         FileInputStream inputStream = new FileInputStream(file);
-        byte[] arr = new byte[1024 * 5];
+        byte[] arr = new byte[(int) file.length()];
         int length = inputStream.read(arr);
         return Arrays.copyOfRange(arr, 0, length);
     }

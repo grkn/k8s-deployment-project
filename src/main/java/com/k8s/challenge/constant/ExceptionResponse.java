@@ -3,7 +3,7 @@ package com.k8s.challenge.constant;
 import org.springframework.http.HttpStatus;
 
 public enum ExceptionResponse {
-    GENERAL("k8s-0000", HttpStatus.INTERNAL_SERVER_ERROR, "Unknown exception occured."),
+    GENERAL("k8s-0000", HttpStatus.INTERNAL_SERVER_ERROR, "Unknown exception occurred."),
     UNAUTHORIZED("k8s-1000", HttpStatus.UNAUTHORIZED, "The request is unauthorized."),
     BAD_REQUEST("k8s-1001", HttpStatus.BAD_REQUEST, "%s"),
     NOT_FOUND("k8s-1002", HttpStatus.NOT_FOUND, "%s"),
