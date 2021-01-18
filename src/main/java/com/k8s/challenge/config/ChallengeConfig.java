@@ -20,9 +20,11 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -114,7 +116,7 @@ public class ChallengeConfig {
             ClientCertificateAuthentication clientCertificateAuthentication;
             LOGGER.info("BasePath is {}, Client Cert Path is {}, Client Key Path is {}", path, clientCrt, clientKey);
             if (StringUtils.isEmpty(clientCrt) || StringUtils.isEmpty(clientKey)) {
-                clientCertificateAuthentication = new  ClientCertificateAuthentication(readFileAsByte("client_test.crt"),
+                clientCertificateAuthentication = new ClientCertificateAuthentication(readFileAsByte("client_test.crt"),
                         readFileAsByte("client_test.key"));
             } else {
                 clientCertificateAuthentication = new ClientCertificateAuthentication(readFileAsByte(new File(clientCrt)),
@@ -154,16 +156,15 @@ public class ChallengeConfig {
     }
 
     private static byte[] readFileAsByte(String fileName) throws IOException {
-        try(InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName)) {
+        try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName)) {
             return IOUtils.toByteArray(inputStream);
         }
     }
 
     private static byte[] readFileAsByte(File file) throws IOException {
-        FileInputStream inputStream = new FileInputStream(file);
-        byte[] arr = new byte[(int) file.length()];
-        int length = inputStream.read(arr);
-        return Arrays.copyOfRange(arr, 0, length);
+        try (FileInputStream inputStream = new FileInputStream(file);) {
+            return IOUtils.toByteArray(inputStream);
+        }
     }
 
     @Bean
